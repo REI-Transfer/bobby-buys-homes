@@ -93,7 +93,7 @@ export default function HomePage() {
                   <div className="w-full max-w-sm sm:max-w-lg">
                     <Image
                       src={config.headshotUrl}
-                      alt={config.ownerName || config.companyName}
+                      alt="Bobby Buys Homes Team"
                       width={640}
                       height={640}
                       unoptimized
