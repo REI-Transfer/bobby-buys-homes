@@ -90,7 +90,7 @@ export default function HomePage() {
             <div className="mt-8 md:mt-12 mx-auto flex flex-col items-center gap-3">
               {config.headshotUrl && (
                 ibuykc ? (
-                  <div className="w-full max-w-xs">
+                  <div className="w-full max-w-sm sm:max-w-lg">
                     <Image
                       src={config.headshotUrl}
                       alt={config.ownerName || config.companyName}
@@ -112,12 +112,9 @@ export default function HomePage() {
                   </div>
                 )
               )}
-              {config.ownerName && (
-                <div className="text-center">
-                  <p className={ibuykc ? "text-base font-semibold text-gray-900" : "text-base font-semibold text-white"}>{config.ownerName}</p>
-                  <p className={ibuykc ? "text-sm text-gray-500" : "text-sm text-white/60"}>{config.companyName}</p>
-                </div>
-              )}
+              <div className="text-center">
+                <p className={ibuykc ? "text-base font-semibold text-gray-900" : "text-base font-semibold text-white"}>Bobby Buys Homes Team</p>
+              </div>
             </div>
           )}
 

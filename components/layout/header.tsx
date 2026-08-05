@@ -42,12 +42,12 @@ export function Header({ companyName, phoneDisplay, phoneHref, logoUrl, headerBg
                 alt={companyName}
                 width={44}
                 height={44}
-                className={ibuykcStyle ? "h-12 md:h-16 w-auto aspect-auto flex-shrink-0 object-contain" : "h-11 w-11 flex-shrink-0 rounded-lg object-contain"}
+                className={ibuykcStyle ? "h-14 sm:h-16 md:h-20 w-auto aspect-auto flex-shrink-0 object-contain" : "h-11 w-11 flex-shrink-0 rounded-lg object-contain"}
                 unoptimized
               />
             )
           )}
-          {!isBannerLogo && (
+          {!isBannerLogo && !ibuykcStyle && (
             <span
               className="text-base font-bold leading-tight"
               style={{ color: isDark ? "white" : "var(--accent)" }}
