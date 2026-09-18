@@ -44,7 +44,8 @@ export async function POST(request: Request) {
     // Two-step form: 'early' (stage 1 contact details) or 'complete' (final
     // answers). Anything else, including a missing value, is treated as
     // 'complete' so older callers keep today's behavior.
-    const stage: "early" | "complete" = data.lead_stage === "early" ? "early" : "complete"
+    const stage: "early" | "complete" | "disqualified" =
+      data.lead_stage === "early" ? "early" : data.lead_stage === "disqualified" ? "disqualified" : "complete"
 
     // Server-side validation (both stages: stage 1 already collects name,
     // email, phone and address)
@@ -86,12 +87,13 @@ export async function POST(request: Request) {
     // --- GoFunnel external webhook: forward the lead for gf_sid attribution ---
     // Env-var-driven (shared template): each deployment sets its own creds. When
     // GOFUNNEL_WEBHOOK_CREDENTIAL_ID / _SECRET are unset, the forward is skipped,
-    // so this is a no-op until a deployment opts in. Runs for BOTH lead stages;
-    // idempotencyKey is the per-stage meta_event_id, so the two calls are distinct.
+    // so this is a no-op until a deployment opts in. Runs for the COMPLETE stage only.
     try {
       const GF_CREDENTIAL_ID = process.env.GOFUNNEL_WEBHOOK_CREDENTIAL_ID || ""
       const GF_BEARER = process.env.GOFUNNEL_WEBHOOK_SECRET || ""
-      if (GF_CREDENTIAL_ID && GF_BEARER) {
+      // Server-side Meta events only for the finished survey (William, 2026-09-18):
+      // no GoFunnel forward for stage 1 partials or stage-2 disqualified sellers.
+      if (stage === "complete" && GF_CREDENTIAL_ID && GF_BEARER) {
         const gfCookie = request.headers.get("cookie") || ""
         const gfMatch = gfCookie.match(/(?:^|; )gf_sid=([^;]*)/)
         const gfSid = (data.gf_sid || (gfMatch ? decodeURIComponent(gfMatch[1]) : "") || "").toString().trim()

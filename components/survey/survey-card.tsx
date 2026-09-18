@@ -387,7 +387,7 @@ export function SurveyCard({ phoneDisplay = "(800) 000-0000", phoneHref = "80000
       if (typeof window !== 'undefined' && (window as { fbq?: FbqFn }).fbq) {
         const fbq = (window as { fbq: FbqFn }).fbq
         fbq('trackCustom', 'LeadEarly', {
-          content_name: `${getBrandName()} Stage 1`, content_category: 'partial-lead',
+          content_name: `${companyName || getBrandName()} Stage 1`, content_category: 'partial-lead',
         }, { eventID: earlyEventId })
       }
     } catch {
@@ -491,7 +491,7 @@ export function SurveyCard({ phoneDisplay = "(800) 000-0000", phoneHref = "80000
       // Fire weighted Meta Pixel event (browser-side; CAPI is a separate later phase)
       if (typeof window !== 'undefined' && (window as { fbq?: FbqFn }).fbq) {
         const fbq = (window as { fbq: FbqFn }).fbq
-        const brandName = getBrandName()
+        const brandName = companyName || getBrandName()
         if (qualified) {
           fbq('track', 'Lead', {
             value: score * 25, currency: 'USD',
@@ -531,12 +531,49 @@ export function SurveyCard({ phoneDisplay = "(800) 000-0000", phoneHref = "80000
     return null
   }
 
+  // Stage-2 hard DQ: tell n8n this seller was disqualified, so the workflow's
+  // 15-minute partial-lead follow-up does not forward them to the client CRM.
+  // No pixel event, no GoFunnel forward (the server route skips both).
+  const sendDisqualified = (reason: string, answers: SurveyData) => {
+    try {
+      const fullName = `${answers.firstName.trim()} ${answers.lastName.trim()}`.trim()
+      void fetch('/api/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          lead_stage: 'disqualified',
+          firstName: answers.firstName.trim(),
+          lastName: answers.lastName.trim(),
+          name: fullName,
+          email: answers.email,
+          phone: answers.phone,
+          address: answers.address,
+          isLegalOwner: answers.isLegalOwner,
+          listedOnMarket: answers.listedOnMarket,
+          propertyType: answers.propertyType,
+          timeline: answers.timeline,
+          condition: answers.condition,
+          reason: answers.reason,
+          ownershipLength: answers.ownershipLength,
+          qualified: false,
+          disqualify_reason: reason,
+          source: 'Survey Form (Stage 2 disqualified)',
+          submittedAt: new Date().toISOString(),
+          stage1_event_id: stage1EventIdRef.current,
+          ...trackingRef.current,
+        }),
+      }).catch(() => undefined)
+    } catch {
+      // never block the disqualify screen
+    }
+  }
+
   const handleStage2OptionSelect = (field: Stage2Field, value: string) => {
     const next = { ...surveyData, [field]: value }
     setSurveyData(next)
 
     const dq = stage2DisqualifyReason(field, value)
-    if (dq) { disqualify(dq); return }
+    if (dq) { sendDisqualified(dq, next); disqualify(dq); return }
 
     setTimeout(() => {
       if (dqPendingRef.current) return
